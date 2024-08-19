@@ -122,24 +122,74 @@ function createWebSocketServer(server) {
   }
 
   function startGameLoop(room) {
-    if (rooms[room].interval) return; // Don't start another loop if one is already running
+    if (rooms[room].interval) return;
 
     rooms[room].interval = setInterval(() => {
       const gameState = rooms[room].gamestate;
 
-      // Move player 1
-      moveSnake(gameState.player1);
+      if (gameState.gameRunning) {
+        // Move player 1
+        moveSnake(gameState.player1, gameState);
 
-      // Move player 2
-      moveSnake(gameState.player2);
+        // Move player 2
+        moveSnake(gameState.player2, gameState);
 
-      broadcastGameState(room); // Broadcast the updated game state
+        // Check for apple collision
+        checkAppleCollision(gameState);
 
-      // Check if the game is still running
-      if (!gameState.gameRunning) {
-        stopGameLoop(room); // Stop the loop if the game is over
+        broadcastGameState(room);
       }
     }, updateInterval);
+  }
+
+  function moveSnake(player, gameState) {
+    const newLocation = {
+      x: Math.max(
+        0,
+        Math.min(cols - 1, player.location.x + player.direction.x)
+      ),
+      y: Math.max(
+        0,
+        Math.min(rows - 1, player.location.y + player.direction.y)
+      ),
+    };
+
+    if (!isOccupied(newLocation, gameState)) {
+      player.location = newLocation;
+    }
+  }
+
+  function isOccupied(location, gameState) {
+    return (
+      (location.x === gameState.player1.location.x &&
+        location.y === gameState.player1.location.y) ||
+      (location.x === gameState.player2.location.x &&
+        location.y === gameState.player2.location.y)
+    );
+  }
+
+  function checkAppleCollision(gameState) {
+    const players = [gameState.player1, gameState.player2];
+    players.forEach((player) => {
+      if (
+        player.location.x === gameState.apple.x &&
+        player.location.y === gameState.apple.y
+      ) {
+        player.score++;
+        gameState.apple = generateAppleLocation(gameState);
+      }
+    });
+  }
+
+  function generateAppleLocation(gameState) {
+    let newLocation;
+    do {
+      newLocation = {
+        x: Math.floor(Math.random() * cols),
+        y: Math.floor(Math.random() * rows),
+      };
+    } while (isOccupied(newLocation, gameState));
+    return newLocation;
   }
 
   function stopGameLoop(room) {

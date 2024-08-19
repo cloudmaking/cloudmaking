@@ -339,19 +339,12 @@ function isValidMove(location) {
 }
 
 function isOccupied(location) {
-  if (
-    location.x === gamestate.player1.location.x &&
-    location.y === gamestate.player1.location.y
-  ) {
-    return true;
-  }
-  if (
-    location.x === gamestate.player2.location.x &&
-    location.y === gamestate.player2.location.y
-  ) {
-    return true;
-  }
-  return false;
+  return (
+    (location.x === gamestate.player1.location.x &&
+      location.y === gamestate.player1.location.y) ||
+    (location.x === gamestate.player2.location.x &&
+      location.y === gamestate.player2.location.y)
+  );
 }
 
 function preventDefault(e) {
@@ -419,33 +412,55 @@ function resetGame() {
 
 // Game loop
 function gameLoop() {
-  if (gamestate.gameRunning) {
-    moveSnake(gamestate.player1);
-    moveSnake(gamestate.player2);
-    checkAppleCollision();
-    renderGameState(); // Render the updated game state on the canvas
-  }
+  renderGameState();
   requestAnimationFrame(gameLoop);
 }
 
+function handleInput(direction) {
+  if (!gamestate.gameRunning) return;
+
+  if (currentPlayerId === gamestate.player1.id) {
+    gamestate.player1.direction = direction;
+  } else if (currentPlayerId === gamestate.player2.id) {
+    gamestate.player2.direction = direction;
+  }
+
+  sendMessage({ type: "update_direction", direction: direction });
+}
+
+// Update the keydown and touch event listeners to use handleInput
+document.addEventListener("keydown", (event) => {
+  let direction;
+  switch (event.key) {
+    case "ArrowUp":
+      direction = { x: 0, y: -1 };
+      break;
+    case "ArrowDown":
+      direction = { x: 0, y: 1 };
+      break;
+    case "ArrowLeft":
+      direction = { x: -1, y: 0 };
+      break;
+    case "ArrowRight":
+      direction = { x: 1, y: 0 };
+      break;
+    default:
+      return;
+  }
+  handleInput(direction);
+});
+
 function moveSnake(player) {
   const newLocation = {
-    x: player.location.x + player.direction.x,
-    y: player.location.y + player.direction.y,
+    x: Math.max(0, Math.min(cols - 1, player.location.x + player.direction.x)),
+    y: Math.max(0, Math.min(rows - 1, player.location.y + player.direction.y)),
   };
 
-  if (isValidMove(newLocation) && !isOccupied(newLocation)) {
+  if (!isOccupied(newLocation)) {
     player.location = newLocation;
-  } else {
-    // Handle game over, collision with walls or snake body
-    gamestate.gameRunning = false;
-    gamestate.statusBarText = "Game Over!";
-    updateStatusBar();
-    return;
   }
 }
 
 // Start the game
 // initialiseGame('Waiting for more players to join...');
 renderGameState();
-//requestAnimationFrame(gameLoop);
