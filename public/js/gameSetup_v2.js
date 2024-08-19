@@ -448,4 +448,4 @@ function moveSnake(player) {
 // Start the game
 // initialiseGame('Waiting for more players to join...');
 renderGameState();
-requestAnimationFrame(gameLoop);
+//requestAnimationFrame(gameLoop);
