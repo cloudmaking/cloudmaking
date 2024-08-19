@@ -1,5 +1,8 @@
 const WebSocket = require("ws");
 
+const cols = 30;
+const rows = 30;
+
 function createWebSocketServer(server) {
   const wss = new WebSocket.Server({ server });
   let rooms = {};
@@ -54,6 +57,18 @@ function createWebSocketServer(server) {
         case "cast_game_state":
           rooms[currentRoom].gamestate = data.gameState;
           broadcastGameState(currentRoom);
+          break;
+
+        case "update_direction":
+          if (currentRoom && rooms[currentRoom]) {
+            const gameState = rooms[currentRoom].gamestate;
+            if (ws.playerId === gameState.player1.id) {
+              gameState.player1.direction = data.direction;
+            } else if (ws.playerId === gameState.player2.id) {
+              gameState.player2.direction = data.direction;
+            }
+            broadcastGameState(currentRoom);
+          }
           break;
       }
     });

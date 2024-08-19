@@ -222,31 +222,6 @@ function renderGameState() {
   ctx.fillRect(gamestate.apple.x * size, gamestate.apple.y * size, size, size);
 }
 
-// make a function that handles arrow key inputs and swipe inputs
-document.addEventListener("keydown", (event) => {
-  if (!gamestate.gameRunning) return;
-
-  const key = event.key;
-  let direction;
-  switch (key) {
-    case "ArrowUp":
-      direction = { x: 0, y: -1 };
-      break;
-    case "ArrowDown":
-      direction = { x: 0, y: 1 };
-      break;
-    case "ArrowLeft":
-      direction = { x: -1, y: 0 };
-      break;
-    case "ArrowRight":
-      direction = { x: 1, y: 0 };
-      break;
-    default:
-      return;
-  }
-  moveHelper(direction);
-});
-
 canvas.addEventListener("touchstart", handleTouchStart, false);
 canvas.addEventListener("touchmove", handleTouchMove, false);
 document.addEventListener("touchmove", preventDefault, { passive: false });
@@ -261,11 +236,7 @@ function handleTouchStart(event) {
 }
 
 function handleTouchMove(event) {
-  if (!xDown || !yDown) {
-    return;
-  }
-
-  if (!gamestate.gameRunning) return;
+  if (!xDown || !yDown || !gamestate.gameRunning) return;
 
   const xUp = event.touches[0].clientX;
   const yUp = event.touches[0].clientY;
@@ -273,57 +244,18 @@ function handleTouchMove(event) {
   const xDiff = xDown - xUp;
   const yDiff = yDown - yUp;
 
+  let direction;
   if (Math.abs(xDiff) > Math.abs(yDiff)) {
-    if (xDiff > 0) {
-      // Swipe left
-      const direction = { x: -1, y: 0 };
-      moveHelper(direction);
-    } else {
-      // Swipe right
-      const direction = { x: 1, y: 0 };
-      moveHelper(direction);
-    }
+    direction = xDiff > 0 ? { x: -1, y: 0 } : { x: 1, y: 0 };
   } else {
-    if (yDiff > 0) {
-      // Swipe up
-      const direction = { x: 0, y: -1 };
-      moveHelper(direction);
-    } else {
-      // Swipe down
-      const direction = { x: 0, y: 1 };
-      moveHelper(direction);
-    }
+    direction = yDiff > 0 ? { x: 0, y: -1 } : { x: 0, y: 1 };
   }
+
+  handleInput(direction);
 
   // Reset values
   xDown = null;
   yDown = null;
-}
-
-function moveHelper(direction) {
-  let hasDirectionChanged = false;
-
-  if (currentPlayerId === gamestate.player1.id) {
-    if (
-      gamestate.player1.direction.x !== direction.x ||
-      gamestate.player1.direction.y !== direction.y
-    ) {
-      gamestate.player1.direction = direction;
-      hasDirectionChanged = true;
-    }
-  } else if (currentPlayerId === gamestate.player2.id) {
-    if (
-      gamestate.player2.direction.x !== direction.x ||
-      gamestate.player2.direction.y !== direction.y
-    ) {
-      gamestate.player2.direction = direction;
-      hasDirectionChanged = true;
-    }
-  }
-
-  if (hasDirectionChanged) {
-    sendMessage({ type: "cast_game_state", gameState: gamestate });
-  }
 }
 
 function isValidMove(location) {
@@ -419,16 +351,32 @@ function gameLoop() {
 function handleInput(direction) {
   if (!gamestate.gameRunning) return;
 
+  let hasDirectionChanged = false;
+
   if (currentPlayerId === gamestate.player1.id) {
-    gamestate.player1.direction = direction;
+    if (
+      gamestate.player1.direction.x !== direction.x ||
+      gamestate.player1.direction.y !== direction.y
+    ) {
+      gamestate.player1.direction = direction;
+      hasDirectionChanged = true;
+    }
   } else if (currentPlayerId === gamestate.player2.id) {
-    gamestate.player2.direction = direction;
+    if (
+      gamestate.player2.direction.x !== direction.x ||
+      gamestate.player2.direction.y !== direction.y
+    ) {
+      gamestate.player2.direction = direction;
+      hasDirectionChanged = true;
+    }
   }
 
-  sendMessage({ type: "update_direction", direction: direction });
+  if (hasDirectionChanged) {
+    sendMessage({ type: "update_direction", direction: direction });
+  }
 }
 
-// Update the keydown and touch event listeners to use handleInput
+// Update the keydown event listener
 document.addEventListener("keydown", (event) => {
   let direction;
   switch (event.key) {
