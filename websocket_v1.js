@@ -123,22 +123,9 @@ function createWebSocketServer(server) {
 
   function startGameLoop(room) {
     if (rooms[room].interval) return; // Don't start another loop if one is already running
-
     rooms[room].interval = setInterval(() => {
-      const gameState = rooms[room].gamestate;
-
-      // Move player 1
-      moveSnake(gameState.player1);
-
-      // Move player 2
-      moveSnake(gameState.player2);
-
-      broadcastGameState(room); // Broadcast the updated game state
-
-      // Check if the game is still running
-      if (!gameState.gameRunning) {
-        stopGameLoop(room); // Stop the loop if the game is over
-      }
+      // Update game logic here
+      broadcastGameState(room);
     }, updateInterval);
   }
 

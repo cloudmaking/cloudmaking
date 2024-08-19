@@ -301,29 +301,26 @@ function handleTouchMove(event) {
 }
 
 function moveHelper(direction) {
-  let hasDirectionChanged = false;
-
   if (currentPlayerId === gamestate.player1.id) {
-    if (
-      gamestate.player1.direction.x !== direction.x ||
-      gamestate.player1.direction.y !== direction.y
-    ) {
+    const newLocation = {
+      x: gamestate.player1.location.x + direction.x,
+      y: gamestate.player1.location.y + direction.y,
+    };
+    if (isValidMove(newLocation) && !isOccupied(newLocation)) {
       gamestate.player1.direction = direction;
-      hasDirectionChanged = true;
+      gamestate.player1.location = newLocation;
     }
   } else if (currentPlayerId === gamestate.player2.id) {
-    if (
-      gamestate.player2.direction.x !== direction.x ||
-      gamestate.player2.direction.y !== direction.y
-    ) {
+    const newLocation = {
+      x: gamestate.player2.location.x + direction.x,
+      y: gamestate.player2.location.y + direction.y,
+    };
+    if (isValidMove(newLocation) && !isOccupied(newLocation)) {
       gamestate.player2.direction = direction;
-      hasDirectionChanged = true;
+      gamestate.player2.location = newLocation;
     }
   }
-
-  if (hasDirectionChanged) {
-    sendMessage({ type: "cast_game_state", gameState: gamestate });
-  }
+  sendMessage({ type: "cast_game_state", gameState: gamestate });
 }
 
 function isValidMove(location) {
@@ -420,29 +417,9 @@ function resetGame() {
 // Game loop
 function gameLoop() {
   if (gamestate.gameRunning) {
-    moveSnake(gamestate.player1);
-    moveSnake(gamestate.player2);
     checkAppleCollision();
-    renderGameState(); // Render the updated game state on the canvas
   }
   requestAnimationFrame(gameLoop);
-}
-
-function moveSnake(player) {
-  const newLocation = {
-    x: player.location.x + player.direction.x,
-    y: player.location.y + player.direction.y,
-  };
-
-  if (isValidMove(newLocation) && !isOccupied(newLocation)) {
-    player.location = newLocation;
-  } else {
-    // Handle game over, collision with walls or snake body
-    gamestate.gameRunning = false;
-    gamestate.statusBarText = "Game Over!";
-    updateStatusBar();
-    return;
-  }
 }
 
 // Start the game
