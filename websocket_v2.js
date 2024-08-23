@@ -1,3 +1,4 @@
+// websocket.js
 const WebSocket = require("ws");
 
 const cols = 30;
@@ -60,15 +61,33 @@ function createWebSocketServer(server) {
           break;
 
         case "update_direction":
+          console.log(
+            `Received direction update for player ${data.playerId}:`,
+            data.direction
+          );
           if (currentRoom && rooms[currentRoom]) {
             const gameState = rooms[currentRoom].gamestate;
-            if (ws.playerId === gameState.player1.id) {
+            if (data.playerId === gameState.player1.id) {
               gameState.player1.direction = data.direction;
-            } else if (ws.playerId === gameState.player2.id) {
+              console.log(
+                "Updated player 1 direction:",
+                gameState.player1.direction
+              );
+            } else if (data.playerId === gameState.player2.id) {
               gameState.player2.direction = data.direction;
+              console.log(
+                "Updated player 2 direction:",
+                gameState.player2.direction
+              );
             }
             broadcastGameState(currentRoom);
           }
+          break;
+
+        case "start_game":
+          rooms[currentRoom].gamestate = data.gameState;
+          rooms[currentRoom].gamestate.gameRunning = true;
+          broadcastGameState(currentRoom);
           break;
       }
     });
@@ -139,25 +158,40 @@ function createWebSocketServer(server) {
   function startGameLoop(room) {
     if (rooms[room].interval) return;
 
+    console.log(`Starting game loop for room ${room}`);
+
     rooms[room].interval = setInterval(() => {
       const gameState = rooms[room].gamestate;
 
       if (gameState.gameRunning) {
+        console.log(`Game running in room ${room}`);
+
         // Move player 1
         moveSnake(gameState.player1, gameState);
+        console.log(
+          `Player 1 position: ${JSON.stringify(gameState.player1.location)}`
+        );
 
         // Move player 2
         moveSnake(gameState.player2, gameState);
+        console.log(
+          `Player 2 position: ${JSON.stringify(gameState.player2.location)}`
+        );
 
         // Check for apple collision
         checkAppleCollision(gameState);
 
         broadcastGameState(room);
+      } else {
+        console.log(`Game not running in room ${room}`);
       }
     }, updateInterval);
   }
 
   function moveSnake(player, gameState) {
+    console.log(`Moving player ${player.id}`);
+    console.log(`Current direction: ${JSON.stringify(player.direction)}`);
+
     const newLocation = {
       x: Math.max(
         0,
@@ -169,8 +203,13 @@ function createWebSocketServer(server) {
       ),
     };
 
+    console.log(`Proposed new location: ${JSON.stringify(newLocation)}`);
+
     if (!isOccupied(newLocation, gameState)) {
       player.location = newLocation;
+      console.log(`Player moved to: ${JSON.stringify(player.location)}`);
+    } else {
+      console.log(`Movement blocked, location occupied`);
     }
   }
 

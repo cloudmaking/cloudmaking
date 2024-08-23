@@ -102,14 +102,6 @@ socket.addEventListener("close", () => {
   // If player1 left, make player2 the new player1
 });
 
-// helper funtions
-function handleScheduledUpdate() {
-  sendMessage({ type: "request_update", roomId: roomId });
-}
-
-// Call this function at regular intervals, e.g., every 1000 ms
-setInterval(handleScheduledUpdate, 1000);
-
 function sendMessage(message) {
   //console.log("Sending message:", message); // Debug log
   if (socket.readyState === WebSocket.OPEN) {
@@ -225,9 +217,6 @@ function renderGameState() {
 canvas.addEventListener("touchstart", handleTouchStart, false);
 canvas.addEventListener("touchmove", handleTouchMove, false);
 document.addEventListener("touchmove", preventDefault, { passive: false });
-
-// let xDown = null;
-// let yDown = null;
 
 function handleTouchStart(event) {
   const firstTouch = event.touches[0];
@@ -397,18 +386,3 @@ document.addEventListener("keydown", (event) => {
   }
   handleInput(direction);
 });
-
-function moveSnake(player) {
-  const newLocation = {
-    x: Math.max(0, Math.min(cols - 1, player.location.x + player.direction.x)),
-    y: Math.max(0, Math.min(rows - 1, player.location.y + player.direction.y)),
-  };
-
-  if (!isOccupied(newLocation)) {
-    player.location = newLocation;
-  }
-}
-
-// Start the game
-// initialiseGame('Waiting for more players to join...');
-renderGameState();
