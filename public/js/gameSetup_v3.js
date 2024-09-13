@@ -1,4 +1,4 @@
-//Newest build 7
+//Newest build 6
 //const socket = new WebSocket(`ws://localhost:8080`);
 const socket = new WebSocket(
   `wss://${window.location.hostname}:${window.location.port}`
