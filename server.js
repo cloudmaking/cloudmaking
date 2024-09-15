@@ -2,7 +2,7 @@ const express = require("express");
 const http = require("http");
 const path = require("path");
 
-const createWebSocketServer = require("./websocket_v3");
+const createWebSocketServer = require("./snake_websocket");
 
 const app = express();
 const server = http.createServer(app);

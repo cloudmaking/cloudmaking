@@ -1,10 +1,13 @@
-// uiEnhancements.js
+// game_room_ui.js
 
 document.addEventListener("DOMContentLoaded", () => {
   const fullscreenButton = document.getElementById("fullscreen-btn");
+  const homeButton = document.getElementById("homeButton");
+  const copyLinkButton = document.getElementById("copy-link-button");
   const body = document.body;
   const gameContainer = document.getElementById("game");
 
+  // Fullscreen Toggle
   fullscreenButton.addEventListener("click", () => {
     if (!document.fullscreenElement) {
       body
@@ -54,4 +57,22 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     { passive: false }
   );
+
+  // Home Button Functionality
+  homeButton.addEventListener("click", () => {
+    window.location.href = "https://cloudmaking.co.uk";
+  });
+
+  // Copy Link Button Functionality
+  copyLinkButton.addEventListener("click", () => {
+    const roomLink = window.location.href;
+    navigator.clipboard
+      .writeText(roomLink)
+      .then(() => {
+        alert("Room link copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+      });
+  });
 });

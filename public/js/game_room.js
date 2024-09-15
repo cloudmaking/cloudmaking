@@ -1,4 +1,4 @@
-// gameSetup.js
+// game_room.js
 
 (() => {
   const canvas = document.getElementById("gameCanvas");

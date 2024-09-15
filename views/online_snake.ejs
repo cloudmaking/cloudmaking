@@ -1,7 +1,11 @@
+<!-- online_snake.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Multiplayer Snake Game</title>
     <meta name="description" content="Play Snake online with a friend. Share a link to join the same game room!">
     <%- include('partials/html_head') %>
@@ -17,26 +21,31 @@
         </div>
     </header>
     <main>
-        <div class="button-container">
-            <button id="create-room-button" onclick="createRoom()" target="_blank">Create Room</button>
-        </div>
-        <div class="game-info">
+        <section class="button-container">
+            <button id="create-room-button" onclick="createRoom()" class="btn create-room-btn" aria-label="Create a new game room">Create Room</button>
+            <button id="homeButton" onclick="window.location.href='https://cloudmaking.co.uk'" class="btn home-btn" aria-label="Home">Home</button>
+        </section>
+        <section class="game-info">
             <div class="game-description">
                 <h2>About the Game</h2>
-                <p>This is a fun and competitive online multiplayer snake game. You can create a game room and share the link with a friend to join the same game room. Both players can then compete to eat the apples and score points.</p>
+                <p>This is a fun and competitive online multiplayer snake game. Create a game room and share the link with a friend to join the same room. Both players will compete to eat apples and score points.</p>
                 <h2>Instructions</h2>
                 <ul>
                     <li>Create a game room by clicking the "Create Room" button.</li>
                     <li>Share the generated room link with a friend.</li>
-                    <li>Once both players have joined, the game can be started.</li>
-                    <li>Use arrow keys or swipe to control your snake.</li>
-                    <li>The game can be paused and resumed using the buttons.</li>
+                    <li>Once both players have joined, start the game.</li>
+                    <li>Use arrow keys or swipe gestures to control your snake.</li>
+                    <li>The game can be paused and resumed using the on-screen buttons.</li>
                     <li>The first player to reach the winning score wins the game.</li>
                 </ul>
             </div>
-        </div>
+        </section>
+        <div class="gap"></div> <!-- Added gap between instructions and footer -->
     </main>
-    <script src="/js/online_snake.js"></script>
+    <footer class="footer">
+        <p>&copy; 2024 Online Multiplayer Snake Game. All rights reserved.</p>
+    </footer>
+    <script src="/js/online_snake.js" defer></script>
 </body>
 
 </html>

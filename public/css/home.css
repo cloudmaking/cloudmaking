@@ -1,122 +1,183 @@
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #d3d3d3; /* Gameboy grey */
+/* home.css */
+
+:root {
+    --primary-color: #87CEFA; /* Light Sky Blue */
+    --secondary-color: #4682B4; /* Steel Blue */
+    --accent-color: #FFFFFF; /* White for clouds */
+    --background-gradient: linear-gradient(to bottom, #87CEFA, #B0E0E6); /* Sky gradient */
+    --text-color: #333333; /* Dark Grey for text */
+    --button-hover-bg: #5A9BD5;
+    --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    --transition-duration: 0.3s;
+    --font-family: 'Roboto', sans-serif;
+    --max-content-width: 1200px;
+    --gap-size: 40px; /* Increased for better spacing */
+}
+
+* {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background: var(--background-gradient);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    color: var(--text-color);
     overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
-/* Improved header styles */
+/* Header Styling */
 .header {
+    width: 100%;
+    background-color: rgba(135, 206, 250, 0.9); /* Semi-transparent sky blue */
+    padding: 20px 0;
+    box-shadow: var(--box-shadow);
     position: fixed;
     top: 0;
-    width: 100%;
-    background: linear-gradient(135deg, #a8b5a2, #718c5a); /* Gameboy inspired colors */
-    padding: 10px 0;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     z-index: 1000;
 }
 
 .header-content {
-    max-width: 1200px;
+    max-width: var(--max-content-width);
     margin: 0 auto;
     display: flex;
+    flex-direction: row; /* Changed from column to row */
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* Space between h1 and buttons */
+    gap: 15px;
     padding: 0 20px;
-    flex-wrap: wrap;
 }
 
 .header-content h1 {
-    font-size: 2rem;
-    color: #2e3b29; /* Darker Gameboy color */
-    margin: 0;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: 2.5rem;
+    color: var(--secondary-color);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .header-content p {
-    font-size: 1rem;
-    color: #e0e0e0;
-    margin: 0;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    /* Removed the paragraph as per user's update */
 }
 
+/* Header Buttons */
 .header-buttons {
     display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 15px;
+    flex-wrap: nowrap; /* Prevent wrapping to keep all buttons in one line */
+    justify-content: center;
 }
 
-#fund-button, #contribute-button {
-    background-color: #728c3c; /* Gameboy green */
+.btn {
+    background-color: var(--primary-color);
     border: none;
-    color: white;
-    padding: 10px 20px;
+    color: var(--accent-color);
+    padding: 12px 25px;
     font-size: 1rem;
     cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-}
-
-#fund-button:hover, #contribute-button:hover {
-    background-color: #6b7d33; /* Darker green for hover effect */
-}
-
-#contact-link {
-    color: #fff;
-    font-size: 0.9rem;
-    margin-left: 10px;
+    border-radius: 25px;
+    box-shadow: var(--box-shadow);
+    transition: background-color var(--transition-duration), transform var(--transition-duration), box-shadow var(--transition-duration);
     text-decoration: none;
 }
 
-#contact-link:hover {
+.btn:hover {
+    background-color: var(--button-hover-bg);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fund-btn {
+    background-color: #FFA07A; /* Light Salmon */
+}
+
+.fund-btn:hover {
+    background-color: #FF7F50; /* Coral */
+}
+
+.contribute-btn {
+    background-color: #32CD32; /* Lime Green */
+}
+
+.contribute-btn:hover {
+    background-color: #228B22; /* Forest Green */
+}
+
+.contact-btn {
+    background-color: #FF69B4; /* Hot Pink for Contact button */
+}
+
+.contact-btn:hover {
+    background-color: #C71585; /* Medium Violet Red */
+}
+
+.contact-link {
+    /* Removed as we replaced it with a button */
+    /* color: var(--secondary-color);
+    font-size: 0.95rem;
+    text-decoration: none;
+    align-self: center;
+}
+
+.contact-link:hover {
     text-decoration: underline;
+} */
 }
 
+/* Main Content */
 main {
-    max-width: 1200px;
-    padding: 70px 20px 20px; /* Adjusted top padding to avoid overlap with the fixed header */
-    margin: 0 auto;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    max-width: var(--max-content-width);
+    width: 100%;
+    padding: 160px 20px 20px; /* Increased top padding to avoid overlap with fixed header */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap-size);
 }
 
-/* Filter Buttons */
 .filter-buttons {
-    text-align: center;
-    margin: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
 }
 
 .filter-button {
-    background-color: #728c3c; /* Gameboy green */
+    background-color: var(--primary-color);
     border: none;
-    color: white;
-    padding: 8px 10px;
-    font-size: 0.9rem;
+    color: var(--accent-color);
+    padding: 8px 15px;
+    font-size: 0.95rem;
     cursor: pointer;
-    border-radius: 5px;
-    margin: 0 5px;
-    transition: background-color 0.3s ease;
+    border-radius: 20px;
+    transition: background-color var(--transition-duration);
 }
 
 .filter-button:hover {
-    background-color: #6b7d33; /* Darker green for hover effect */
+    background-color: var(--button-hover-bg);
 }
 
 /* App Cards Grid */
 .app-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Adjusted min width for smaller gaps */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 20px;
 }
 
 .app-card {
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: var(--accent-color);
+    border-radius: 15px;
+    box-shadow: var(--box-shadow);
     overflow: hidden;
     text-align: center;
-    transition: transform 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -124,18 +185,18 @@ main {
 
 .app-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .app-image {
     width: 100%;
-    height: 200px;
+    height: 180px;
     object-fit: cover;
-    filter: grayscale(100%); /* Make image black and white */
-    transition: filter 0.3s ease;
+    transition: transform 0.3s;
 }
 
 .app-card:hover .app-image {
-    filter: grayscale(0%); /* Restore color on hover */
+    transform: scale(1.05);
 }
 
 .app-content {
@@ -143,79 +204,144 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    height: 100%;
+    gap: 15px;
 }
 
 .app-content h2 {
     font-size: 1.5rem;
-    color: #2e3b29; /* Darker Gameboy color */
+    color: var(--secondary-color);
     margin-bottom: 10px;
 }
 
 .app-content p {
     font-size: 1rem;
-    color: #666;
-    margin-bottom: 20px;
+    color: #555555;
+    margin-bottom: 15px;
 }
 
-.app-content button {
-    background-color: #718c5a; /* Gameboy inspired green */
-    color: white;
-    border: none;
+.play-btn {
+    background-color: var(--secondary-color);
+    color: var(--accent-color);
     padding: 10px 20px;
-    border-radius: 5px;
+    border: none;
+    border-radius: 20px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color var(--transition-duration);
 }
 
-.app-content button:hover {
-    background-color: #6b7d33; /* Darker green for hover effect */
+.play-btn:hover {
+    background-color: #4169E1; /* Royal Blue */
+}
+
+/* Footer Styling */
+.footer {
+    width: 100%;
+    background-color: rgba(135, 206, 250, 0.9); /* Semi-transparent sky blue */
+    padding: 15px 0;
+    box-shadow: var(--box-shadow);
+    position: fixed;
+    bottom: 0;
+    text-align: center;
+}
+
+.footer p {
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+/* Gap between app cards and footer */
+.gap {
+    height: var(--gap-size);
 }
 
 /* Responsive Design */
+
 @media (max-width: 1130px) {
     main {
-        padding: 120px 20px 20px; /* Further increased top padding for mobile */
+        padding: 160px 15px 20px;
     }
 }
 
 @media (max-width: 768px) {
-    main {
-        padding: 130px 20px 20px; /* Further increased top padding for mobile */
-    }
-
     .header-content {
-        flex-direction: column;
+        padding: 0 10px;
+        flex-direction: column; /* Stack elements vertically on smaller screens */
         align-items: center;
-        text-align: center;
-        padding: 0 10px; /* Added padding to center align the content */
     }
 
     .header-buttons {
-        margin-top: 10px;
-    }
-
-    .filter-buttons {
-        display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 0px;
     }
 
     .app-cards {
-        grid-template-columns: 1fr;
-        gap: 20px; /* Increase gap for better spacing on small screens */
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .app-image {
+        height: 150px;
+    }
+
+    .app-content h2 {
+        font-size: 1.3rem;
+    }
+
+    .app-content p {
+        font-size: 0.95rem;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .fund-btn,
+    .contribute-btn,
+    .play-btn {
+        max-width: 150px;
+    }
+
+    .footer {
+        padding: 10px 0;
     }
 }
 
 @media (max-width: 480px) {
-    main {
-        padding: 130px 10px 20px; /* Adjusted top and side padding for mobile */
+    .header-content {
+        padding: 0 5px;
+        flex-direction: column; /* Stack elements vertically on very small screens */
     }
 
     .app-cards {
         grid-template-columns: 1fr;
-        gap: 40px; /* Further increase gap for better spacing on small screens */
+        gap: 25px;
+    }
+
+    .app-image {
+        height: 130px;
+    }
+
+    .app-content h2 {
+        font-size: 1.2rem;
+    }
+
+    .app-content p {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 8px 15px;
+        font-size: 0.85rem;
+    }
+
+    .fund-btn,
+    .contribute-btn,
+    .play-btn {
+        max-width: 120px;
+    }
+
+    .footer p {
+        font-size: 0.8rem;
     }
 }

@@ -1,3 +1,4 @@
+<!-- index.ejs -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -13,11 +14,13 @@
     <header class="header">
         <div class="header-content">
             <h1>Cloudmaking</h1>
-            <p>OMG ITS ALL WORKING @cloudmaking</p>
             <div class="header-buttons">
-                <button id="fund-button" onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=66P4DZ3GAYA8N', '_blank')">Donate</button>
-                <!-- <button id="contribute-button" onclick="window.open('https://github.com/cloudmaking/new_downbad', '_blank')">Contribute</button> -->
-                <a id="contact-link" href="https://www.aliraza.cloud/inquiry-form" target="_blank">Request features or Report bugs - Click here</a>
+                <button id="fund-button" onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=66P4DZ3GAYA8N', '_blank')"
+                    class="btn fund-btn" aria-label="Donate">Donate</button>
+                <!-- <button id="contribute-button" onclick="window.open('https://github.com/cloudmaking/new_downbad', '_blank')"
+                    class="btn contribute-btn" aria-label="Contribute">Contribute</button> -->
+                <button id="contact-button" onclick="window.location.href='https://www.aliraza.cloud/inquiry-form'"
+                    class="btn contact-btn" aria-label="Contact Me">Contact Me</button>
             </div>
         </div>
     </header>
@@ -39,12 +42,17 @@
                 <div class="app-content">
                     <h2>Online Multiplayer Snake</h2>
                     <p>[Coming soon] Play Snake online with a friend. Share a link to join the same game room!</p>
-                    <button onclick="window.location.href='/online_snake'">Play Online</button>
+                    <button onclick="window.location.href='/online_snake'" class="btn play-btn">Play Online</button>
                 </div>
             </div>
+            <!-- Add more app cards here -->
         </div>
+        <div class="gap"></div> <!-- Added gap between app cards and footer -->
     </main>
-    <script src="/js/home.js"></script>
+    <footer class="footer">
+        <p>&copy; 2024 Cloudmaking. All rights reserved.</p>
+    </footer>
+    <script src="/js/index.js" defer></script>
 </body>
 
 </html>
