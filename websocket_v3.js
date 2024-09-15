@@ -5,9 +5,12 @@ const { v4: uuidv4 } = require("uuid");
 
 // Adjustable variables
 const GRID_SIZE = 30; // Grid size (30x30)
-const GAME_TICK_INTERVAL = 100; // Game update interval in ms
+const GAME_TICK_INTERVAL = 150; // Game update interval in ms (updated from 100ms to 150ms)
 const WINNING_SCORE = 10; // Winning score
 const PLAYER_COLORS = ["#3a71e8", "#9de83a"]; // Player colors
+
+// **New Variable for Collision Detection**
+const collisionEnabled = true; // Set to true to enable collision detection
 
 function createWebSocketServer(server) {
   const wss = new WebSocket.Server({ server });
@@ -144,6 +147,10 @@ class GameRoom {
         }
         break;
 
+      case "resetGame":
+        this.resetGame();
+        break;
+
       default:
         ws.send(
           JSON.stringify({ type: "error", message: "Unknown message type" })
@@ -168,16 +175,13 @@ class GameRoom {
   }
 
   initGameState() {
-    // Initialize gameState with gridSize first
     this.gameState = {
       gridSize: GRID_SIZE,
-      apple: null, // Will set after gridSize is defined
+      apple: null,
     };
 
-    // Now we can safely call getRandomPosition()
     this.gameState.apple = this.getRandomPosition();
 
-    // Initialize players' snakes
     let index = 0;
     for (const player of this.players.values()) {
       player.snake = [this.getStartingPosition(index)];
@@ -189,13 +193,8 @@ class GameRoom {
   }
 
   startGame() {
-    // Initialize game state
     this.initGameState();
-
-    // Notify players that the game has started
     this.broadcast({ type: "gameStarted" });
-
-    // Start the game loop
     this.gameInterval = setInterval(
       () => this.updateGameState(),
       GAME_TICK_INTERVAL
@@ -206,16 +205,14 @@ class GameRoom {
     try {
       const gridSize = this.gameState.gridSize;
 
-      // Create a grid to track occupied positions
       const occupiedPositions = new Map();
       for (const player of this.players.values()) {
         for (const segment of player.snake) {
-          occupiedPositions.set(`${segment.x},${segment.y}`, true);
+          occupiedPositions.set(`${segment.x},${segment.y}`, player.id);
         }
       }
 
       for (const player of this.players.values()) {
-        // Update direction
         if (player.nextDirection) {
           if (
             this.isValidDirectionChange(player.direction, player.nextDirection)
@@ -225,7 +222,6 @@ class GameRoom {
           player.nextDirection = null;
         }
 
-        // Calculate new head position
         const currentHead = player.snake[0];
         const newHead = { ...currentHead };
 
@@ -244,42 +240,43 @@ class GameRoom {
             break;
         }
 
-        // Check if new head position is occupied
-        const newHeadKey = `${newHead.x},${newHead.y}`;
-        if (occupiedPositions.has(newHeadKey)) {
-          // Blocking mechanic: Do not move the snake
-          // Optionally, you can set player.direction = null to stop the snake
-          continue;
-        } else {
-          // Move the snake
-          player.snake.unshift(newHead);
-          occupiedPositions.set(newHeadKey, true);
-
-          // Check for apple consumption
-          if (
-            newHead.x === this.gameState.apple.x &&
-            newHead.y === this.gameState.apple.y
-          ) {
-            // Increase score
-            player.score += 1;
-
-            // Place a new apple
-            this.gameState.apple = this.getRandomPosition();
-
-            // Check for win condition
-            if (player.score >= WINNING_SCORE) {
-              this.endGame(`Player ${player.id} wins!`);
-              return;
-            }
-          } else {
-            // Remove the tail segment
-            const tail = player.snake.pop();
-            occupiedPositions.delete(`${tail.x},${tail.y}`);
+        if (collisionEnabled) {
+          const occupantId = occupiedPositions.get(`${newHead.x},${newHead.y}`);
+          if (occupantId && occupantId !== player.id) {
+            this.handleCollision(player);
+            continue;
           }
+        }
+
+        if (
+          player.snake.some(
+            (segment) => segment.x === newHead.x && segment.y === newHead.y
+          )
+        ) {
+          this.handleCollision(player);
+          continue;
+        }
+
+        player.snake.unshift(newHead);
+        occupiedPositions.set(`${newHead.x},${newHead.y}`, player.id);
+
+        if (
+          newHead.x === this.gameState.apple.x &&
+          newHead.y === this.gameState.apple.y
+        ) {
+          player.score += 1;
+          this.gameState.apple = this.getRandomPosition();
+
+          if (player.score >= WINNING_SCORE) {
+            this.endGame(`Player ${player.id.substring(0, 4)} wins!`);
+            return;
+          }
+        } else {
+          const tail = player.snake.pop();
+          occupiedPositions.delete(`${tail.x},${tail.y}`);
         }
       }
 
-      // Send updated game state to clients
       this.sendGameState();
     } catch (err) {
       console.error("Error in updateGameState:", err);
@@ -292,14 +289,15 @@ class GameRoom {
     }
   }
 
-  isValidDirectionChange(currentDirection, nextDirection) {
+  isValidDirectionChange(currentDirection, newDirection) {
     const opposites = {
       up: "down",
       down: "up",
       left: "right",
       right: "left",
     };
-    return opposites[currentDirection] !== nextDirection;
+    if (!currentDirection) return true;
+    return opposites[currentDirection] !== newDirection;
   }
 
   sendGameState() {
@@ -326,6 +324,45 @@ class GameRoom {
     clearInterval(this.gameInterval);
     this.gameInterval = null;
     this.broadcast({ type: "gameOver", message });
+  }
+
+  resetGame() {
+    if (this.gameInterval) {
+      clearInterval(this.gameInterval);
+      this.gameInterval = null;
+    }
+
+    for (const player of this.players.values()) {
+      player.snake = [];
+      player.direction = null;
+      player.nextDirection = null;
+      player.score = 0;
+    }
+
+    this.initGameState();
+    this.broadcast({ type: "gameReset", message: "Game has been reset." });
+  }
+
+  handleCollision(player) {
+    player.snake = [this.getStartingPosition(0)];
+    player.direction = "right";
+    player.nextDirection = null;
+    player.score = 0;
+
+    player.ws.send(
+      JSON.stringify({
+        type: "collision",
+        message: "You collided! Score reset and respawned.",
+      })
+    );
+
+    this.broadcast({
+      type: "status",
+      message: `Player ${player.id.substring(
+        0,
+        4
+      )} collided and was respawned.`,
+    });
   }
 
   getRandomPosition() {

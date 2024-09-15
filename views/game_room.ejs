@@ -1,63 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake Game Room - <%= roomId %></title>
     <meta name="description" content="Join the Snake game room to play with a friend.">
-    <%- include('partials/html_head') %>
+    <link rel="icon" href="/fav.webp" type="image/x-icon">
     <link rel="stylesheet" href="/css/game_room.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <!--<h4>Game Room: <%= roomId %></h4>-->
-            <h4 id="status">Waiting for players...</h4>
-            <ul id="player-list"></ul>
-            <div class="header-buttons">
-                <button id="homeButton">Home</button>
-                <button id="copy-link-button">Link</button>
-                <button id="start-btn">Start</button>
-            <button id="reset-btn">Reset</button>
+    <header class="header" role="banner">
+        <div class="header__content">
+            <h4 id="status" class="header__status">Waiting for players...</h4>
+            <nav aria-label="Player List">
+                <ul id="player-list" class="header__player-list"></ul>
+            </nav>
+            <div class="header__buttons">
+                <button id="homeButton" class="btn btn--primary" aria-label="Home">Home</button>
+                <button id="copy-link-button" class="btn btn--secondary" aria-label="Copy Room Link">Link</button>
+                <button id="start-btn" class="btn btn--start" aria-label="Start Game" disabled>Start</button>
+                <button id="reset-btn" class="btn btn--reset" aria-label="Reset Game" disabled>Reset</button>
+                <button id="fullscreen-btn" class="btn btn--fullscreen" aria-label="Toggle Fullscreen" title="Toggle Fullscreen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="#fff" viewBox="0 0 24 24">
+                        <path d="M4 4h6v2H6v4H4V4zm16 0v6h-2V6h-4V4h6zM4 20v-6h2v4h4v2H4zm16-4v6h-6v-2h4v-4h2z"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
-    <main>
-        <div id="game">
-            <canvas id="gameCanvas" width="600" height="600"></canvas>
-        </div>
-        <div class="button-container">
-            
-        </div>
-        <div id="score-container">
+    <main class="main-content">
+        <section id="game" class="game" aria-label="Snake Game">
+            <canvas id="gameCanvas" width="600" height="600" aria-label="Snake Game Canvas"></canvas>
+        </section>
+        <section class="score-container" aria-label="Player Scores">
             <div class="player-score" id="player1-score">
-                <div class="score-circle" style="background-color: #3a71e8;">
+                <div class="score-circle score-circle--player1">
                     <span class="score-text">0</span>
                 </div>
                 <span class="score-label">Player 1</span>
             </div>
             <div class="player-score" id="player2-score">
-                <div class="score-circle" style="background-color: #9de83a;">
+                <div class="score-circle score-circle--player2">
                     <span class="score-text">0</span>
                 </div>
                 <span class="score-label">Player 2</span>
             </div>
-        </div>
+        </section>
     </main>
-    <script src="/js/gameSetup_v3.js"></script>
-    <script>
-        // Copy Link Functionality
-        document.getElementById('copy-link-button').addEventListener('click', () => {
-            const roomLink = window.location.href;
-            navigator.clipboard.writeText(roomLink).then(() => {
-                console.log('Link copied to clipboard');
-            }).catch(err => {
-                console.error('Failed to copy link:', err);
-            });
-        });
-
-        // Home Button Functionality
-        document.getElementById('homeButton').addEventListener('click', () => {
-            window.location.href = '/'; // Redirect to home page
-        });
-    </script>
+    <script src="/js/gameSetup_v3.js" defer></script>
+    <script src="/js/uiEnhancements.js" defer></script>
 </body>
 </html>
