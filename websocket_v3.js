@@ -1,240 +1,366 @@
-const WebSocket = require("ws");
+// websocket.js
 
-const cols = 30;
-const rows = 30;
+const WebSocket = require("ws");
+const { v4: uuidv4 } = require("uuid");
+
+// Adjustable variables
+const GRID_SIZE = 30; // Grid size (30x30)
+const GAME_TICK_INTERVAL = 100; // Game update interval in ms
+const WINNING_SCORE = 10; // Winning score
+const PLAYER_COLORS = ["#3a71e8", "#9de83a"]; // Player colors
 
 function createWebSocketServer(server) {
   const wss = new WebSocket.Server({ server });
-  let rooms = {};
-  let updateInterval = 100; // Interval in milliseconds
+  const gameRooms = new Map(); // Map of roomId to GameRoom instances
 
-  wss.on("connection", (ws) => {
-    let currentRoom = null;
+  wss.on("connection", function connection(ws, req) {
+    // Parse the roomId from the query parameters
+    const urlParams = new URLSearchParams(req.url.replace("/?", ""));
+    const roomId = urlParams.get("roomId");
 
-    ws.on("message", (message) => {
-      let data = JSON.parse(message);
-      if (!data.type) {
-        console.error("Received message without type:", data);
-        return;
-      }
-      switch (data.type) {
-        case "new_player":
-          currentRoom = data.roomId;
-          if (!rooms[currentRoom]) {
-            rooms[currentRoom] = {
-              clients: [],
-              gamestate: {
-                player1: {
-                  id: null,
-                  location: { x: 1, y: 1 },
-                  direction: { x: 1, y: 0 },
-                  score: 0,
-                },
-                player2: {
-                  id: null,
-                  location: { x: cols - 2, y: rows - 2 },
-                  direction: { x: -1, y: 0 },
-                  score: 0,
-                },
-                apple: generateAppleLocation(), // Initialize apple location
-                gameRunning: false,
-                statusBarText: "Waiting for player 2...",
-                startButtonText: "Start Game",
-              },
-              interval: null,
-            };
-          }
-          if (rooms[currentRoom].gamestate.player1.id === null) {
-            ws.playerId = generatePlayerId();
-            rooms[currentRoom].gamestate.player1.id = ws.playerId;
-            rooms[currentRoom].gamestate.statusBarText =
-              "Waiting for player 2...";
-            console.log("Player 1 connected to room:", currentRoom);
-            ws.send(
-              JSON.stringify({ type: "player_id", playerId: ws.playerId })
-            );
-          } else if (rooms[currentRoom].gamestate.player2.id === null) {
-            ws.playerId = generatePlayerId();
-            rooms[currentRoom].gamestate.player2.id = ws.playerId;
-            rooms[currentRoom].gamestate.statusBarText = "Press start to begin";
-            console.log("Player 2 connected to room:", currentRoom);
-            ws.send(
-              JSON.stringify({ type: "player_id", playerId: ws.playerId })
-            );
-            startGameLoop(currentRoom);
-          } else {
-            ws.playerId = null;
-            ws.send(JSON.stringify({ type: "game_full" }));
-            ws.close();
-          }
-          rooms[currentRoom].clients.push(ws);
-          broadcastGameState(currentRoom);
-          break;
+    if (!roomId) {
+      ws.send(JSON.stringify({ type: "error", message: "No roomId provided" }));
+      ws.close();
+      return;
+    }
 
-        case "scheduled_update":
-          gamestate = data.gameState;
-          updateScores(); // Update scores if needed
-          renderGameState(); // Redraw the canvas
-          break;
+    let gameRoom = gameRooms.get(roomId);
 
-        case "cast_game_state":
-          rooms[currentRoom].gamestate = data.gameState;
-          broadcastGameState(currentRoom);
-          break;
+    if (!gameRoom) {
+      // Create a new game room if it doesn't exist
+      gameRoom = new GameRoom(roomId);
+      gameRooms.set(roomId, gameRoom);
+    }
 
-        case "update_direction":
-          if (currentRoom && rooms[currentRoom]) {
-            const gameState = rooms[currentRoom].gamestate;
-            const player =
-              ws.playerId === gameState.player1.id
-                ? gameState.player1
-                : gameState.player2;
-            console.log(
-              `Before update: Player ${ws.playerId} direction: ${player.direction.x}, ${player.direction.y}`
-            );
+    gameRoom.addPlayer(ws);
 
-            player.direction = data.direction;
-
-            console.log(
-              `After update: Player ${ws.playerId} direction: ${player.direction.x}, ${player.direction.y}`
-            );
-            broadcastGameState(currentRoom);
-          }
-          break;
-      }
+    ws.on("message", function incoming(message) {
+      const data = JSON.parse(message);
+      gameRoom.handleMessage(ws, data);
     });
 
-    ws.on("close", () => {
-      if (currentRoom && rooms[currentRoom]) {
-        rooms[currentRoom].clients = rooms[currentRoom].clients.filter(
-          (client) => client !== ws
-        );
-        if (ws.playerId === rooms[currentRoom].gamestate.player1.id) {
-          rooms[currentRoom].gamestate.player1.id = null;
-          console.log("Player 1 left in room:", currentRoom);
-          castPlayerLeft(currentRoom);
-        } else if (ws.playerId === rooms[currentRoom].gamestate.player2.id) {
-          rooms[currentRoom].gamestate.player2.id = null;
-          console.log("Player 2 left in room:", currentRoom);
-          castPlayerLeft(currentRoom);
-        }
-        if (rooms[currentRoom].clients.length === 0) {
-          stopGameLoop(currentRoom);
-        }
+    ws.on("close", function close() {
+      gameRoom.removePlayer(ws);
+      // Remove the room if empty to free up resources
+      if (gameRoom.isEmpty()) {
+        gameRooms.delete(roomId);
       }
     });
   });
+}
 
-  function castPlayerLeft(room) {
-    const message = JSON.stringify({
-      type: "player_left",
-      gameState: rooms[room].gamestate,
-    });
-
-    rooms[room].clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
+// GameRoom class to manage individual game rooms
+class GameRoom {
+  constructor(roomId) {
+    this.roomId = roomId;
+    this.players = new Map(); // Map of ws to player objects
+    this.playerCount = 0;
+    this.gameState = null; // Initialize when the game starts
+    this.gameInterval = null;
   }
 
-  function broadcastGameState(room) {
-    const message = JSON.stringify({
-      type: "update_game_state",
-      gameState: rooms[room].gamestate,
-    });
+  addPlayer(ws) {
+    if (this.playerCount >= 2) {
+      ws.send(JSON.stringify({ type: "error", message: "Room is full" }));
+      ws.close();
+      return;
+    }
 
-    rooms[room].clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
-  }
+    const playerId = uuidv4();
+    const playerColor = PLAYER_COLORS[this.playerCount];
 
-  function generatePlayerId() {
-    let playerId;
-    do {
-      playerId = "player_" + Math.random().toString(36).substr(2, 9);
-    } while (
-      Object.values(rooms).some(
-        (room) =>
-          room.gamestate.player1.id === playerId ||
-          room.gamestate.player2.id === playerId
-      )
-    );
-    return playerId;
-  }
-
-  function startGameLoop(room) {
-    if (rooms[room].interval) return;
-
-    console.log(`Starting game loop for room ${room}`);
-    rooms[room].interval = setInterval(() => {
-      const gameState = rooms[room].gamestate;
-
-      if (gameState.gameRunning) {
-        console.log(`Game loop running: ${JSON.stringify(gameState)}`);
-        moveSnake(gameState.player1, gameState);
-        moveSnake(gameState.player2, gameState);
-        checkAppleCollision(gameState);
-        broadcastGameState(room);
-      }
-    }, updateInterval);
-  }
-
-  function moveSnake(player, gameState) {
-    const newLocation = {
-      x: player.location.x + player.direction.x,
-      y: player.location.y + player.direction.y,
+    const player = {
+      ws,
+      id: playerId,
+      color: playerColor,
+      direction: null,
+      snake: [],
+      score: 0,
     };
 
-    // Ensure the new location is within bounds
-    newLocation.x = Math.max(0, Math.min(cols - 1, newLocation.x));
-    newLocation.y = Math.max(0, Math.min(rows - 1, newLocation.y));
+    this.players.set(ws, player);
+    this.playerCount++;
 
-    console.log(
-      `Attempting to move player ${player.id} to ${newLocation.x}, ${newLocation.y}`
-    );
+    ws.send(JSON.stringify({ type: "init", playerId, color: playerColor }));
+    this.broadcastPlayerList();
 
-    if (!isOccupied(newLocation, gameState)) {
-      console.log(`Moved player ${player.id} to new location.`);
-      player.location = newLocation; // Actually update the location
+    if (this.playerCount === 2) {
+      this.broadcast({
+        type: "status",
+        message: "Both players connected. Ready to start.",
+      });
     } else {
-      console.log(`Player ${player.id} move blocked by occupation.`);
+      this.broadcast({
+        type: "status",
+        message: "Waiting for another player...",
+      });
     }
   }
 
-  function isOccupied(location, gameState) {
-    return (
-      (location.x === gameState.player1.location.x &&
-        location.y === gameState.player1.location.y) ||
-      (location.x === gameState.player2.location.x &&
-        location.y === gameState.player2.location.y)
+  removePlayer(ws) {
+    if (this.players.has(ws)) {
+      this.players.delete(ws);
+      this.playerCount--;
+
+      // Stop the game if it's running
+      if (this.gameInterval) {
+        clearInterval(this.gameInterval);
+        this.gameInterval = null;
+      }
+
+      this.broadcast({
+        type: "status",
+        message: "A player has disconnected. Waiting for player...",
+      });
+      this.broadcastPlayerList();
+    }
+  }
+
+  isEmpty() {
+    return this.players.size === 0;
+  }
+
+  handleMessage(ws, data) {
+    const player = this.players.get(ws);
+    if (!player) return;
+
+    switch (data.type) {
+      case "startGame":
+        if (this.playerCount === 2) {
+          this.startGame();
+        } else {
+          ws.send(
+            JSON.stringify({
+              type: "error",
+              message: "Cannot start game. Waiting for another player.",
+            })
+          );
+        }
+        break;
+
+      case "changeDirection":
+        if (this.gameInterval) {
+          player.nextDirection = data.direction;
+        }
+        break;
+
+      default:
+        ws.send(
+          JSON.stringify({ type: "error", message: "Unknown message type" })
+        );
+        break;
+    }
+  }
+
+  broadcast(data) {
+    const message = JSON.stringify(data);
+    for (const player of this.players.values()) {
+      player.ws.send(message);
+    }
+  }
+
+  broadcastPlayerList() {
+    const playerList = [];
+    for (const player of this.players.values()) {
+      playerList.push({ playerId: player.id, color: player.color });
+    }
+    this.broadcast({ type: "playerList", players: playerList });
+  }
+
+  initGameState() {
+    // Initialize gameState with gridSize first
+    this.gameState = {
+      gridSize: GRID_SIZE,
+      apple: null, // Will set after gridSize is defined
+    };
+
+    // Now we can safely call getRandomPosition()
+    this.gameState.apple = this.getRandomPosition();
+
+    // Initialize players' snakes
+    let index = 0;
+    for (const player of this.players.values()) {
+      player.snake = [this.getStartingPosition(index)];
+      player.direction = "right";
+      player.nextDirection = "right";
+      player.score = 0;
+      index++;
+    }
+  }
+
+  startGame() {
+    // Initialize game state
+    this.initGameState();
+
+    // Notify players that the game has started
+    this.broadcast({ type: "gameStarted" });
+
+    // Start the game loop
+    this.gameInterval = setInterval(
+      () => this.updateGameState(),
+      GAME_TICK_INTERVAL
     );
   }
 
-  function checkAppleCollision(gameState) {
-    const players = [gameState.player1, gameState.player2];
-    players.forEach((player) => {
-      if (
-        player.location.x === gameState.apple.x &&
-        player.location.y === gameState.apple.y
-      ) {
-        player.score++;
-        gameState.apple = generateAppleLocation(gameState);
+  updateGameState() {
+    try {
+      const gridSize = this.gameState.gridSize;
+
+      // Create a grid to track occupied positions
+      const occupiedPositions = new Map();
+      for (const player of this.players.values()) {
+        for (const segment of player.snake) {
+          occupiedPositions.set(`${segment.x},${segment.y}`, true);
+        }
       }
-    });
+
+      for (const player of this.players.values()) {
+        // Update direction
+        if (player.nextDirection) {
+          if (
+            this.isValidDirectionChange(player.direction, player.nextDirection)
+          ) {
+            player.direction = player.nextDirection;
+          }
+          player.nextDirection = null;
+        }
+
+        // Calculate new head position
+        const currentHead = player.snake[0];
+        const newHead = { ...currentHead };
+
+        switch (player.direction) {
+          case "up":
+            newHead.y = (newHead.y - 1 + gridSize) % gridSize;
+            break;
+          case "down":
+            newHead.y = (newHead.y + 1) % gridSize;
+            break;
+          case "left":
+            newHead.x = (newHead.x - 1 + gridSize) % gridSize;
+            break;
+          case "right":
+            newHead.x = (newHead.x + 1) % gridSize;
+            break;
+        }
+
+        // Check if new head position is occupied
+        const newHeadKey = `${newHead.x},${newHead.y}`;
+        if (occupiedPositions.has(newHeadKey)) {
+          // Blocking mechanic: Do not move the snake
+          // Optionally, you can set player.direction = null to stop the snake
+          continue;
+        } else {
+          // Move the snake
+          player.snake.unshift(newHead);
+          occupiedPositions.set(newHeadKey, true);
+
+          // Check for apple consumption
+          if (
+            newHead.x === this.gameState.apple.x &&
+            newHead.y === this.gameState.apple.y
+          ) {
+            // Increase score
+            player.score += 1;
+
+            // Place a new apple
+            this.gameState.apple = this.getRandomPosition();
+
+            // Check for win condition
+            if (player.score >= WINNING_SCORE) {
+              this.endGame(`Player ${player.id} wins!`);
+              return;
+            }
+          } else {
+            // Remove the tail segment
+            const tail = player.snake.pop();
+            occupiedPositions.delete(`${tail.x},${tail.y}`);
+          }
+        }
+      }
+
+      // Send updated game state to clients
+      this.sendGameState();
+    } catch (err) {
+      console.error("Error in updateGameState:", err);
+      clearInterval(this.gameInterval);
+      this.gameInterval = null;
+      this.broadcast({
+        type: "error",
+        message: "A server error occurred. Please restart the game.",
+      });
+    }
   }
 
-  function generateAppleLocation(gameState) {
-    let newLocation;
+  isValidDirectionChange(currentDirection, nextDirection) {
+    const opposites = {
+      up: "down",
+      down: "up",
+      left: "right",
+      right: "left",
+    };
+    return opposites[currentDirection] !== nextDirection;
+  }
+
+  sendGameState() {
+    const snakes = [];
+    for (const player of this.players.values()) {
+      snakes.push({
+        playerId: player.id,
+        color: player.color,
+        snake: player.snake,
+        score: player.score,
+      });
+    }
+
+    const gameStateMessage = {
+      type: "gameState",
+      apple: this.gameState.apple,
+      snakes,
+    };
+
+    this.broadcast(gameStateMessage);
+  }
+
+  endGame(message) {
+    clearInterval(this.gameInterval);
+    this.gameInterval = null;
+    this.broadcast({ type: "gameOver", message });
+  }
+
+  getRandomPosition() {
+    const gridSize = this.gameState.gridSize;
+    let position;
+    let attempts = 0;
     do {
-      newLocation = {
-        x: Math.floor(Math.random() * cols),
-        y: Math.floor(Math.random() * rows),
+      position = {
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize),
       };
-    } while (isOccupied(newLocation, gameState));
-    return newLocation;
+      attempts++;
+    } while (this.isPositionOccupied(position) && attempts < 100);
+
+    return position;
+  }
+
+  isPositionOccupied(position) {
+    for (const player of this.players.values()) {
+      for (const segment of player.snake) {
+        if (position.x === segment.x && position.y === segment.y) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  getStartingPosition(index) {
+    const gridSize = this.gameState.gridSize;
+    if (index === 0) {
+      return { x: Math.floor(gridSize / 4), y: Math.floor(gridSize / 2) };
+    } else {
+      return { x: Math.floor((3 * gridSize) / 4), y: Math.floor(gridSize / 2) };
+    }
   }
 }
 
