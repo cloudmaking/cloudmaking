@@ -1,6 +1,3 @@
-# DownBad.Cloud
-
-Welcome to DownBad.Cloud! This is a platform where I host and share all of my free and open-source web applications. I greatly appreciate any donations, contributions, and feedback from the community.
 
 ## Features
 
@@ -14,14 +11,14 @@ Welcome to DownBad.Cloud! This is a platform where I host and share all of my fr
 
 ## Getting Started
 
-To get started with DownBad.Cloud, follow these steps:
+To get started, follow these steps:
 
 1. **Explore the Repository**: Take a look at the available web applications in the repository. Each application has its own dedicated folder with a README.md file containing specific instructions on how to use and contribute to it.
 
 2. **Clone the Repository**: If you want to contribute or customize any of the web applications, clone the repository to your local machine using the following command:
 
     ```bash
-    git clone https://github.com/cloudmaking/new_downbad.git
+    git clone https://github.com/cloudmaking/cloudmaking.git
     ```
 
 3. **Choose an Application**: Select the web application you are interested in and navigate to its folder.
@@ -44,4 +41,4 @@ This project is licensed under the [MIT License](LICENSE). Feel free to use, mod
 
 I would like to express my gratitude to the open-source community for their continuous support and inspiration. Without their contributions, this project would not have been possible.
 
-Thank you for visiting DownBad.Cloud and for your interest in my web applications!
+Thank you for visiting cloudmaking.co.uk and for your interest in my web applications!
